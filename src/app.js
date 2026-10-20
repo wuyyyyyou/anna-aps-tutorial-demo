@@ -37,7 +37,7 @@ async function invoke(method, args = {}) {
   const reply = await anna.tools.invoke({ tool_id: toolId, method, args }, { timeoutMs: 180_000 });
   if (reply?.success === false) throw new Error(typeof reply.error === "string" ? reply.error : reply.error?.message || "Tool failed");
   const result = reply?.data ?? reply;
-  if (!result || typeof result !== "object") throw new Error("Executa 返回格式无效。");
+  if (!result || typeof result !== "object") throw new Error("Invalid response format from Executa.");
   record(method, result);
   return result;
 }
@@ -51,42 +51,42 @@ function clearLink(id) {
 function showLink(id, result) {
   clearLink(id);
   const url = new URL(result.url);
-  if (url.protocol !== "https:") throw new Error("Host 未返回 HTTPS 链接。");
+  if (url.protocol !== "https:") throw new Error("The host did not return an HTTPS link.");
   const expires = result.expires_at ? Date.parse(/(?:Z|[+-]\d\d:\d\d)$/.test(result.expires_at)
     ? result.expires_at : `${result.expires_at}Z`) : Date.now() + Number(result.expires_in) * 1000;
-  if (!Number.isFinite(expires) || expires <= Date.now()) throw new Error("下载链接有效期无效，请重新获取。");
+  if (!Number.isFinite(expires) || expires <= Date.now()) throw new Error("The download link has an invalid expiry time. Get a new link.");
   const link = document.createElement("a");
   link.href = url.href;
   link.target = "_blank";
   link.rel = "noopener noreferrer";
-  link.textContent = "打开 / 下载文件 ↗";
+  link.textContent = "Open / download file ↗";
   const expiry = document.createElement("small");
-  expiry.textContent = `链接有效至 ${new Date(expires).toLocaleString()}。仅保留在当前页面，过期后重新获取。`;
+  expiry.textContent = `Link expires ${new Date(expires).toLocaleString("en-US", { timeZoneName: "short" })}. Stored only on this page. Get a new link after it expires.`;
   $(id).append(link, expiry);
   $(id).hidden = false;
   expiryTimers.set(id, setTimeout(() => {
     clearLink(id);
     $(id).hidden = false;
-    $(id).textContent = "下载链接已过期，请重新获取。";
+    $(id).textContent = "This download link has expired. Get a new link.";
   }, Math.min(expires - Date.now(), 2_147_483_647)));
 }
 async function refresh() {
   clearLink("file-link");
   const items = await listAllReports(invoke);
   $("files").replaceChildren();
-  $("file-summary").textContent = `${items.length} 份报告 · scope: user`;
+  $("file-summary").textContent = `${items.length} ${items.length === 1 ? "report" : "reports"} · scope: user`;
   for (const item of items) {
     const row = document.createElement("div"); row.className = "file";
-    const title = document.createElement("strong"); title.textContent = item.title || "Markdown 报告";
+    const title = document.createElement("strong"); title.textContent = item.title || "Markdown report";
     const path = document.createElement("p"); const code = document.createElement("code"); code.textContent = item.path; path.append(code);
-    const info = document.createElement("p"); info.className = "hint"; info.textContent = `${item.size_bytes ?? "?"} bytes · ETag: ${item.etag || "未返回"}`;
+    const info = document.createElement("p"); info.className = "hint"; info.textContent = `${item.size_bytes ?? "?"} bytes · ETag: ${item.etag || "not returned"}`;
     const actions = document.createElement("div"); actions.className = "actions";
-    const download = document.createElement("button"); download.textContent = "获取新下载链接";
+    const download = document.createElement("button"); download.textContent = "Get download link";
     download.addEventListener("click", () => void run(async () => {
       showLink("file-link", await invoke("get_report_url", { path: item.path }));
-      status("已按 APS path 获取新的短期链接。文件无需重复上传。");
+      status("Created a new short-lived link from the APS path. The saved file is ready to download.");
     }));
-    const remove = document.createElement("button"); remove.textContent = "删除…"; remove.className = "danger";
+    const remove = document.createElement("button"); remove.textContent = "Delete…"; remove.className = "danger";
     remove.addEventListener("click", () => {
       deleteTarget = item;
       $("delete-path").textContent = item.path;
@@ -103,36 +103,36 @@ async function loadPreferences() {
   record("storage.get", preferences);
   if (preferences.exists && typeof preferences.value?.title === "string") $("title").value = preferences.value.title;
   $("preferences-info").textContent = preferences.exists
-    ? `已读取 · scope: app · ETag: ${preferences.etag ?? "未返回"}` : "尚未保存偏好 · scope: app";
+    ? `Loaded · scope: app · ETag: ${preferences.etag ?? "not returned"}` : "No saved preferences · scope: app";
 }
 
 $("save").addEventListener("click", () => void run(async () => {
-  status("正在申请 APS 上传、PUT 文件并完成登记…");
+  status("Saving to APS: requesting an upload, sending bytes via PUT, and finalizing…");
   const result = await invoke("save_report", reportInput());
   $("saved-reference").hidden = false;
-  const label = document.createElement("strong"); label.textContent = "已保存：这是稳定的对象引用";
+  const label = document.createElement("strong"); label.textContent = "Saved: a stable object reference";
   const json = document.createElement("pre"); json.textContent = JSON.stringify(result, null, 2);
   $("saved-reference").replaceChildren(label, json);
   await refresh();
-  status("报告已保存到个人 APS。可以刷新页面，再从列表重新找回。");
+  status("Report saved to your personal APS space. Reload the page to find it again in the list.");
 }));
-$("refresh").addEventListener("click", () => void run(async () => { await refresh(); status("已读取本 demo 的全部文件分页。"); }));
-$("load-preferences").addEventListener("click", () => void run(async () => { await loadPreferences(); status("已重新读取 APS KV 偏好。"); }));
+$("refresh").addEventListener("click", () => void run(async () => { await refresh(); status("Loaded all pages of reports for this demo."); }));
+$("load-preferences").addEventListener("click", () => void run(async () => { await loadPreferences(); status("Reloaded preferences from APS KV."); }));
 $("save-preferences").addEventListener("click", () => void run(async () => {
-  if (!preferences) throw new Error("请先点击“重新读取”，取得当前偏好的 ETag。");
-  if (preferences.exists && !preferences.etag) throw new Error("现有偏好缺少 ETag，请检查是否使用真实 APS 后端。");
+  if (!preferences) throw new Error('Click "Reload preferences" first to get the current ETag.');
+  if (preferences.exists && !preferences.etag) throw new Error("Saved preferences have no ETag. Check that you are using the real APS backend.");
   const result = await anna.storage.set({ scope: "app", key: PREFERENCES_KEY,
     value: { title: $("title").value }, ...(preferences.exists ? { if_match: preferences.etag } : {}) });
   record("storage.set", result);
   await loadPreferences();
-  status("已保存标题偏好。其他窗口发生冲突时，请重新读取并确认要保留的标题。");
+  status('Title preference saved. If another window causes a conflict, click "Reload preferences" and confirm which title to keep.');
 }));
 $("temporary").addEventListener("click", () => void run(async () => {
   clearLink("temporary-link");
-  status("正在创建临时上传副本…");
+  status("Uploading a temporary copy…");
   const result = await invoke("temporary_report", { ...reportInput(), mode: $("mode").value });
   showLink("temporary-link", result);
-  status("临时副本已上传。刷新 APS 文件列表时，它不会出现在其中。");
+  status("Temporary copy uploaded. It will not appear when you refresh the APS file list.");
 }));
 $("confirmation").addEventListener("input", () => {
   $("confirm-delete").disabled = !deleteTarget?.etag || $("confirmation").value !== deleteTarget.path;
@@ -146,11 +146,11 @@ $("delete-dialog").addEventListener("close", () => {
     try {
       await invoke("delete_report", { path: item.path, etag: item.etag, confirmation: confirmed });
       await refresh();
-      status("已删除这份报告。APS 软删除后，底层对象由平台回收。");
+      status("Report deleted. APS uses soft deletion; the platform reclaims the underlying object later.");
     } catch (error) {
       clearLink("file-link");
       $("files").replaceChildren();
-      $("file-summary").textContent = "旧列表已失效，请刷新核实云端状态后再操作。";
+      $("file-summary").textContent = "This list is out of date. Refresh to check the current server state before continuing.";
       throw error;
     }
   });
@@ -158,13 +158,13 @@ $("delete-dialog").addEventListener("close", () => {
 
 try {
   toolId = window.__ANNA_TOOL_IDS__?.["report-store"];
-  if (!toolId) throw new Error("缺少 report-store 工具映射，请从本 demo 目录运行 npm run dev。");
+  if (!toolId) throw new Error("The report-store tool mapping is missing. Run npm run dev from this demo's directory.");
   anna = await AnnaAppRuntime.connect();
-  $("connection").textContent = "已连接 Anna";
+  $("connection").textContent = "Connected to Anna";
   await run(async () => {
     await loadPreferences();
     await refresh();
-    status("已连接真实 APS。先保存一份报告，再刷新找回。");
+    status("Connected to the real APS backend. Save a report, then reload to find it again.");
   });
-} catch (error) { $("connection").textContent = "连接失败"; status(error.message, true); }
+} catch (error) { $("connection").textContent = "Connection failed"; status(error.message, true); }
 controls();

@@ -1,65 +1,65 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>APS 报告存档</title>
+  <title>APS Report Archive</title>
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
   <main>
     <header>
-      <div><span class="eyebrow">ANNA · APS TUTORIAL</span><h1>保存一次，下次还能找到。</h1>
-        <p>用一份 Markdown 报告，体验偏好保存、持久文件和临时上传。</p></div>
-      <span id="connection" class="badge">连接 Anna…</span>
+      <div><span class="eyebrow">ANNA · APS TUTORIAL</span><h1>Save now. Find it later.</h1>
+        <p>Explore saved preferences, persistent files, and temporary uploads with a Markdown report.</p></div>
+      <span id="connection" class="badge">Connecting to Anna…</span>
     </header>
-    <p id="status" role="status" aria-live="polite">请从 Anna CLI 的 dashboard 打开本页面。</p>
+    <p id="status" role="status" aria-live="polite">Open this app from the Anna CLI dashboard.</p>
     <div class="layout">
       <section class="card editor">
-        <span class="eyebrow">01 / 一份小报告</span><h2>先写点内容</h2>
-        <label for="title">报告标题</label>
-        <input id="title" maxlength="120" value="我的第一份 APS 报告">
-        <label for="body">正文</label>
-        <textarea id="body" rows="9">这是一份保存在 Anna APS 中的报告。
+        <span class="eyebrow">01 / A SMALL REPORT</span><h2>Write a report</h2>
+        <label for="title">Report title</label>
+        <input id="title" maxlength="120" value="My first APS report">
+        <label for="body">Report body</label>
+        <textarea id="body" rows="9">A Markdown report stored in Anna APS.
 
-- 文件使用 scope: user，方便在平台的个人存储页找到。
-- 文件内容通过 PUT 直接上传到对象存储。
-- 刷新页面后，点击“刷新文件列表”重新找回它。
-- 下载链接会过期，文件引用则保留在 APS 中。</textarea>
-        <button id="save" class="primary" disabled>保存到 APS</button>
-        <p class="hint">每次保存创建一个新文件。demo 正文限制为 12 KiB，便于观察调用。</p>
+- Saved with scope: user, so it appears on the platform's personal storage page.
+- File bytes go directly to object storage via HTTP PUT.
+- Reload the page, then click "Refresh files" to find the report again.
+- Download links expire; the file reference stays in APS.</textarea>
+        <button id="save" class="primary" disabled>Save to APS</button>
+        <p class="hint">Each save creates a new file. This demo limits the report body to 12 KiB to keep calls easy to inspect.</p>
         <div class="divider"></div>
-        <h3>KV：记住标题偏好</h3>
-        <p class="hint">保存到当前 App 的 <code>aps-tutorial/preferences</code>，只包含标题。</p>
-        <div class="actions"><button id="save-preferences" disabled>保存偏好</button><button id="load-preferences" disabled>重新读取</button></div>
-        <p id="preferences-info" class="hint">scope: app · 首次读取后显示状态</p>
+        <h3>KV: remember your title</h3>
+        <p class="hint">Stores only the title at <code>aps-tutorial/preferences</code> in this app's space.</p>
+        <div class="actions"><button id="save-preferences" disabled>Save preferences</button><button id="load-preferences" disabled>Reload preferences</button></div>
+        <p id="preferences-info" class="hint">scope: app · Waiting for the first read</p>
       </section>
       <div class="right-column">
         <section class="card">
           <span class="eyebrow">02 / APS FILES · USER</span>
-          <div class="section-title"><h2>找回已保存的文件</h2><button id="refresh" disabled>刷新文件列表</button></div>
-          <p class="hint">仅列出 <code>aps-tutorial/reports/</code>，自动读取全部分页。不会列出临时 Upload。</p>
-          <p id="file-summary" class="hint">尚未读取</p>
+          <div class="section-title"><h2>Find your saved files</h2><button id="refresh" disabled>Refresh files</button></div>
+          <p class="hint">Lists all pages under <code>aps-tutorial/reports/</code>. Temporary uploads are separate.</p>
+          <p id="file-summary" class="hint">Not loaded yet</p>
           <div id="files" class="files"></div>
           <div id="saved-reference" class="reference" hidden></div>
           <div id="file-link" class="link-result" hidden></div>
         </section>
         <section class="card">
-          <span class="eyebrow">03 / HOST UPLOAD</span><h2>只需要临时传一下？</h2>
-          <p class="hint">上传编辑区的副本，得到短期链接；它不会登记到上面的 APS 文件列表。</p>
-          <div class="actions"><label for="mode" class="sr-only">上传模式</label><select id="mode"><option value="negotiate">negotiate → PUT → confirm</option><option value="inline">inline（小文件）</option></select><button id="temporary" disabled>临时上传副本</button></div>
+          <span class="eyebrow">03 / HOST UPLOAD</span><h2>Need a temporary copy?</h2>
+          <p class="hint">Upload a copy of your report to get a short-lived link. It will not appear in the APS file list above.</p>
+          <div class="actions"><label for="mode" class="sr-only">Upload mode</label><select id="mode"><option value="negotiate">negotiate → PUT → confirm</option><option value="inline">inline (small files)</option></select><button id="temporary" disabled>Upload temporary copy</button></div>
           <div id="temporary-link" class="link-result" hidden></div>
         </section>
       </div>
     </div>
-    <details class="card records"><summary>调用记录（不记录签名链接）</summary><pre id="records">尚无调用</pre></details>
-    <footer>APS 文件属于当前 CLI 登录账号。切换账号或 Host 后，请重新启动 demo。清理时只操作本教程创建的文件。</footer>
+    <details class="card records"><summary>Call history (signed URLs hidden)</summary><pre id="records">No calls yet</pre></details>
+    <footer>APS files belong to the account signed in through the CLI. Restart this demo after switching accounts or hosts. Only clean up files you created for this tutorial.</footer>
   </main>
   <dialog id="delete-dialog">
     <form method="dialog">
-      <h2>删除这份报告</h2><p>请先核对完整路径，再输入它以确认。</p><code id="delete-path"></code>
-      <label for="confirmation">完整路径</label><input id="confirmation" autocomplete="off">
-      <div class="actions"><button value="cancel">取消</button><button id="confirm-delete" value="delete" class="danger" disabled>确认删除</button></div>
+      <h2>Delete this report</h2><p>Check the full path, then type it below to confirm.</p><code id="delete-path"></code>
+      <label for="confirmation">Full path</label><input id="confirmation" autocomplete="off">
+      <div class="actions"><button value="cancel">Cancel</button><button id="confirm-delete" value="delete" class="danger" disabled>Confirm deletion</button></div>
     </form>
   </dialog>
   <script src="./anna-tool-ids.js"></script>

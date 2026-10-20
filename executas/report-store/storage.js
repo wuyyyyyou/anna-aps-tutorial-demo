@@ -5,23 +5,23 @@ const CONTENT_TYPE = "text/markdown";
 
 export function reportBytes({ title, body }) {
   if (typeof title !== "string" || !title.trim() || title.length > 120 || /[\r\n\x00-\x1f]/.test(title)) {
-    throw new Error("标题必须为 1～120 个字符，且不能包含换行或控制字符。");
+    throw new Error("Title must contain 1–120 characters, with no line breaks or control characters.");
   }
   if (typeof body !== "string" || !body.trim() || Buffer.byteLength(body, "utf8") > 12 * 1024) {
-    throw new Error("正文不能为空，且不得超过 12 KiB UTF-8；这是 demo 的教学限制。");
+    throw new Error("Report body must not be empty or exceed 12 KiB in UTF-8. This is a teaching limit for the demo.");
   }
   return Buffer.from(`# ${title.trim()}\n\n${body}\n`, "utf8");
 }
 
 export function reportPath(value) {
   if (typeof value !== "string" || !/^aps-tutorial\/reports\/[a-zA-Z0-9][a-zA-Z0-9._-]{0,120}\.md$/.test(value) || value.includes("..")) {
-    throw new Error("只能操作本 demo 在 aps-tutorial/reports/ 下创建的 Markdown 文件。");
+    throw new Error("Only Markdown reports in this demo's aps-tutorial/reports/ directory are allowed.");
   }
   return value;
 }
 
 function httpsUrl(value) {
-  if (typeof value !== "string" || new URL(value).protocol !== "https:") throw new Error("Host 未返回有效的 HTTPS URL。");
+  if (typeof value !== "string" || new URL(value).protocol !== "https:") throw new Error("The host did not return a valid HTTPS URL.");
   return value;
 }
 
@@ -41,24 +41,24 @@ export async function saveReport(rpc, input, fetchImpl = fetch) {
   const completed = await rpc("files/upload_complete", {
     scope: "user", path, etag: response.headers.get("etag") ?? undefined, size_bytes: bytes.length,
   });
-  if (typeof completed?.etag !== "string" || !completed.etag) throw new Error("APS 未返回完成登记后的 ETag；请刷新列表核实。");
+  if (typeof completed?.etag !== "string" || !completed.etag) throw new Error("APS did not return an ETag after finalizing the upload. Refresh the file list to check its state.");
   return { provider: "aps.files", scope: "user", path, etag: completed.etag,
     size_bytes: completed.size_bytes ?? bytes.length, content_type: CONTENT_TYPE };
 }
 
 export async function listReports(rpc, { cursor } = {}) {
-  if (cursor != null && (typeof cursor !== "string" || cursor.length > 4096)) throw new Error("cursor 无效。");
+  if (cursor != null && (typeof cursor !== "string" || cursor.length > 4096)) throw new Error("Invalid cursor.");
   const page = await rpc("files/list", {
     scope: "user", prefix: REPORT_PREFIX, limit: 20, ...(cursor ? { cursor } : {}),
   });
   const rows = page?.items ?? page?.entries ?? page?.objects;
-  if (!Array.isArray(rows)) throw new Error("无法识别 APS 列表响应；不能当作空目录处理。");
+  if (!Array.isArray(rows)) throw new Error("Unrecognized APS list response. It cannot be treated as an empty directory.");
   const items = rows.map(item => ({
     path: reportPath(item.path), etag: item.etag, size_bytes: item.size_bytes,
     content_type: item.content_type, title: item.metadata?.title ?? item.entry_metadata?.title ?? "",
   }));
   const next = page.next_cursor ?? null;
-  if (next !== null && typeof next !== "string") throw new Error("APS 分页游标无效。");
+  if (next !== null && typeof next !== "string") throw new Error("Invalid APS pagination cursor.");
   return { items, next_cursor: next };
 }
 
@@ -69,12 +69,12 @@ export async function getReportUrl(rpc, { path }) {
 
 export async function deleteReport(rpc, { path, etag, confirmation }) {
   reportPath(path);
-  if (confirmation !== path || typeof etag !== "string" || !etag) throw new Error("删除需要完整路径确认和预览中的 ETag。");
+  if (confirmation !== path || typeof etag !== "string" || !etag) throw new Error("Deletion requires the exact full path and the ETag from the preview.");
   // Do not retry deletion automatically. A timeout does not prove it failed.
   const result = await rpc("files/delete", { scope: "user", path, if_match: etag });
   const matched = result?.path === undefined || result.path === path;
   if (!matched || (result?.deleted !== true && !(result?.ok === true && result.path === path))
-      || result?.deleted === false || result?.ok === false) throw new Error("服务端未确认删除；请刷新列表核实。");
+      || result?.deleted === false || result?.ok === false) throw new Error("The server did not confirm deletion. Refresh the file list to check its state.");
   return { deleted: true, path };
 }
 
@@ -86,13 +86,13 @@ export async function temporaryReport(rpc, input, fetchImpl = fetch) {
     result = await rpc("host/uploadFile", { ...base, mode: "inline", content_b64: bytes.toString("base64") });
   } else if (input.mode === "negotiate") {
     const upload = await rpc("host/uploadFile", { ...base, mode: "negotiate", size_bytes: bytes.length });
-    if (typeof upload.r2_key !== "string" || !upload.r2_key) throw new Error("Host 未返回 r2_key。");
+    if (typeof upload.r2_key !== "string" || !upload.r2_key) throw new Error("The host did not return r2_key.");
     const response = await fetchImpl(httpsUrl(upload.put_url), {
       method: "PUT", headers: upload.headers ?? {}, body: bytes, signal: AbortSignal.timeout(60_000),
     });
     if (!response.ok) throw new Error(`Host Upload PUT failed: HTTP ${response.status}`);
     result = await rpc("host/uploadFile", { mode: "confirm", r2_key: upload.r2_key });
-  } else throw new Error("mode 只能为 inline 或 negotiate。");
+  } else throw new Error("mode must be inline or negotiate.");
   return { provider: "host.upload", mode: input.mode, r2_key: result.r2_key,
     url: httpsUrl(result.download_url ?? result.url), size_bytes: result.size_bytes ?? result.bytes ?? bytes.length,
     expires_at: result.expires_at, expires_in: result.expires_in };

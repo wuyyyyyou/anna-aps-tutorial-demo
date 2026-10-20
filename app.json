@@ -1,9 +1,9 @@
 {
   "slug": "aps-tutorial-demo",
-  "name": "APS 报告存档",
+  "name": "APS Report Archive",
   "version": "0.1.0",
-  "tagline": "保存一份报告，刷新后重新找回。",
-  "description": "APS 入门教程的独立示例：App KV 偏好、个人 APS 文件、短期 Host Upload。",
+  "tagline": "Save a report and find it again after reloading.",
+  "description": "A standalone APS tutorial demo: app preferences in KV, personal APS files, and temporary Host Upload.",
   "category": "developer-tools",
   "pricing_model": "free",
   "bundled_executas": { "report-store": { "path": "executas/report-store" } }

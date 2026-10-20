@@ -9,7 +9,7 @@
   "ui": {
     "bundle": { "format": "static-spa", "entry": "index.html", "external_origins": [] },
     "views": [{
-      "name": "main", "title": "APS 报告存档", "default": true, "entry": "index.html",
+      "name": "main", "title": "APS Report Archive", "default": true, "entry": "index.html",
       "min_size": { "w": 640, "h": 600 }, "default_size": { "w": 1100, "h": 850 },
       "resizable": true, "movable": true, "single_instance": true
     }],

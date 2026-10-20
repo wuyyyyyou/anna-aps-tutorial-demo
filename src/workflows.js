@@ -6,14 +6,14 @@ export async function listAllReports(invoke) {
   let cursor;
   for (let pageNumber = 0; pageNumber < 100; pageNumber++) {
     const page = await invoke("list_reports", cursor ? { cursor } : {});
-    if (!Array.isArray(page.items)) throw new Error("文件列表格式无效。");
+    if (!Array.isArray(page.items)) throw new Error("Invalid file list format.");
     items.push(...page.items);
     cursor = page.next_cursor;
     if (!cursor) return items;
-    if (typeof cursor !== "string" || cursors.has(cursor)) throw new Error("分页游标无效或重复，请重新刷新。");
+    if (typeof cursor !== "string" || cursors.has(cursor)) throw new Error("Invalid or repeated pagination cursor. Refresh the file list.");
     cursors.add(cursor);
   }
-  throw new Error("超过 demo 的 100 页读取限制，请缩小数据量。");
+  throw new Error("This demo reads up to 100 pages. Reduce the number of reports before trying again.");
 }
 
 // Diagnostic records contain object references, never signed URLs or tokens.

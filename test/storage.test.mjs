@@ -3,7 +3,7 @@ import test from "node:test";
 import { saveReport, reportBytes, listReports, getReportUrl, deleteReport, temporaryReport } from "../executas/report-store/storage.js";
 import { listAllReports, redact } from "../src/workflows.js";
 
-const input = { title: "测试报告", body: "中文内容，用 UTF-8 字节计数。" };
+const input = { title: "Test report", body: "Notes from a café ☕. Count UTF-8 bytes, including accents and emoji." };
 const path = "aps-tutorial/reports/2026-10-20-example.md";
 
 test("APS upload: direct PUT, signed headers, UTF-8 size, complete before exposing the reference", async () => {
@@ -61,7 +61,7 @@ test("unique uploads do not overwrite earlier reports", async () => {
 
 test("invalid report content fails before any host call", async () => {
   let calls = 0;
-  for (const bad of [{ ...input, title: "\n" }, { ...input, body: "" }, { ...input, body: "中".repeat(4097) }]) {
+  for (const bad of [{ ...input, title: "\n" }, { ...input, body: "" }, { ...input, body: "📄".repeat(3073) }]) {
     await assert.rejects(saveReport(async () => { calls++; }, bad));
   }
   assert.equal(calls, 0);
@@ -73,8 +73,8 @@ test("listing is scoped and bounded; malformed responses cannot masquerade as an
     assert.deepEqual(args, { scope: "user", prefix: "aps-tutorial/reports/", limit: 20, cursor: "page-2" });
     return { items: [{ path, etag: "v1", size_bytes: 20 }], next_cursor: null };
   }, { cursor: "page-2" });
-  await assert.rejects(listReports(async () => ({})), /列表响应/);
-  await assert.rejects(listReports(async () => ({ items: [{ path: "private/notes.md" }] })), /只能操作/);
+  await assert.rejects(listReports(async () => ({})), /APS list response/);
+  await assert.rejects(listReports(async () => ({ items: [{ path: "private/notes.md" }] })), /Only Markdown reports/);
 });
 
 test("all pages are read and repeated cursors are rejected", async () => {
@@ -86,7 +86,7 @@ test("all pages are read and repeated cursors are rejected", async () => {
   });
   assert.deepEqual(calls, [{}, { cursor: "page-2" }]);
   assert.equal(result.length, 2);
-  await assert.rejects(listAllReports(async () => ({ items: [], next_cursor: "same" })), /重复/);
+  await assert.rejects(listAllReports(async () => ({ items: [], next_cursor: "same" })), /repeated/);
 });
 
 test("fresh URLs use the original scope and path; traversal never reaches the host", async () => {
@@ -117,7 +117,7 @@ test("deletion requires matching preview, ETag and exact confirmation; conflicts
   assert.equal(calls, 0);
   await assert.rejects(deleteReport(rpc, { path, etag: "v1", confirmation: path }), /precondition_failed/);
   assert.equal(calls, 1);
-  await assert.rejects(deleteReport(async () => ({}), { path, etag: "v1", confirmation: path }), /未确认删除/);
+  await assert.rejects(deleteReport(async () => ({}), { path, etag: "v1", confirmation: path }), /did not confirm deletion/);
 });
 
 test("temporary negotiate flow confirms the same opaque key and never calls APS", async () => {
