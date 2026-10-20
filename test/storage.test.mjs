@@ -125,7 +125,11 @@ test("temporary negotiate flow confirms the same opaque key and never calls APS"
   const key = "opaque-key-from-host";
   const result = await temporaryReport(async (method, args) => {
     assert.equal(method, "host/uploadFile"); phases.push(args.mode);
-    if (args.mode === "negotiate") return { r2_key: key, put_url: "https://objects.example/put", headers: { "Content-Type": "text/markdown" } };
+    if (args.mode === "negotiate") {
+      assert.equal(args.expected_bytes, reportBytes(input).length);
+      assert.equal("size_bytes" in args, false);
+      return { r2_key: key, put_url: "https://objects.example/put", headers: { "Content-Type": "text/markdown" } };
+    }
     assert.equal(args.r2_key, key);
     return { r2_key: key, download_url: "https://objects.example/get", size_bytes: 80, expires_in: 1800 };
   }, { ...input, mode: "negotiate" }, async (url, options) => {

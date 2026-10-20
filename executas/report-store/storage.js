@@ -85,7 +85,7 @@ export async function temporaryReport(rpc, input, fetchImpl = fetch) {
   if (input.mode === "inline") {
     result = await rpc("host/uploadFile", { ...base, mode: "inline", content_b64: bytes.toString("base64") });
   } else if (input.mode === "negotiate") {
-    const upload = await rpc("host/uploadFile", { ...base, mode: "negotiate", size_bytes: bytes.length });
+    const upload = await rpc("host/uploadFile", { ...base, mode: "negotiate", expected_bytes: bytes.length });
     if (typeof upload.r2_key !== "string" || !upload.r2_key) throw new Error("The host did not return r2_key.");
     const response = await fetchImpl(httpsUrl(upload.put_url), {
       method: "PUT", headers: upload.headers ?? {}, body: bytes, signal: AbortSignal.timeout(60_000),

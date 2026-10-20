@@ -64,6 +64,23 @@ Each APS save creates a UUID-based filename to avoid overwriting earlier reports
 
 `scope: user` suits the reports this demo delivers to the user. Plugin caches usually belong in `tool`, and app-private state usually belongs in `app`. Choose the scope for your own data's ownership and lifecycle.
 
+## Large payloads and retries
+
+Synchronous `tools.invoke` requests and results each have a **~4 MiB** transport ceiling, including the serialized payload and protocol envelopes. NATS `max_payload` is **4,194,304 bytes**. An oversized result fails with `result_too_large` and `retriable: false`. Base64 adds roughly one third to the raw size, so a 3 MiB binary already approaches the ceiling before the envelopes are added. See [Result size and integrity](https://staging.anna.partners/developers/apps/app-ui-host-api.md#result-size-and-integrity).
+
+The business operation may already have completed when result delivery fails. Check for existing output and change the transfer method before running it again.
+
+For large inputs or outputs, upload the content and pass a small reference through invoke. If the browser holds the bytes, use `anna.upload.negotiate` → direct PUT → `anna.upload.confirm`, then pass the returned short-lived `download_url` and minimal metadata as invoke arguments. Executa fetches that URL and validates the host, response, MIME type, and actual byte count. If Executa holds the bytes, use `host/uploadFile` and return its short-lived URL and metadata. Both ends must implement reading and validating the reference.
+
+Treat the signed URL as a bearer credential: do not log or persist it. The `r2_key` is an opaque handle, not a general file path, and App Upload and Executa Host Upload have different authorization contexts. Prefer `negotiate` for content near the transport boundary; the separate 8 MiB Executa Upload inline cap does not increase the invoke limit. Use APS Files and a `scope/path` reference for durable cross-invoke storage. Async jobs have their own argument and result caps and still need references for large content.
+
+This demo keeps each call to one attempt for inspection. In a production app, add bounded retries at the transport layer:
+
+- Retry transient reads, downloads, and recoverable upload stages within a total deadline. A conservative starting point is two attempts total, with 500–1,000 ms of randomized delay before the retry. Honor `Retry-After` for temporary HTTP 429 responses. Preserve the generated content and retry its transfer instead of repeating the business operation.
+- Retry PUT only when the protocol allows it, the upload still owns the target, the bytes are identical, and the signature is valid. Otherwise obtain a new upload target and track the new reference.
+- Do not retry unchanged oversized payloads, exhausted quotas or invocation budgets, permission failures, or invalid parameters. Re-read after an ETag conflict and resolve it before writing again.
+- Reconcile uncertain writes and deletions before repeating them. App Upload `confirm` is idempotent after success, while APS `files/upload_complete` is not: if its first response is lost, inspect the same scope/path and verify the content before deciding how to recover. Keep Executa Upload recovery within the authorized parent invoke context.
+
 ## Checks and troubleshooting
 
 Stop the dev server before these checks: the build recreates `bundle/`. Restart it with `npm run dev` afterward.
@@ -79,6 +96,7 @@ Automated tests use mock hosts and object storage, including a concurrency test 
 
 | Symptom | What to check |
 | --- | --- |
+| `result_too_large` or an oversized invoke request | Measure the full UTF-8 JSON message, including Base64 and envelopes. Upload the content and pass a reference; retrying the same message will not help |
 | `not_granted` / `-32021` | App and Executa `host_capabilities`, v2 `initialize`, and the current account's grants |
 | `precondition_failed` / `-32023` | Reload KV or the file list, inspect the latest version, then retry the action |
 | `quota_exceeded` / `rate_limited` | Resolve the storage quota or call budget issue before retrying |
@@ -94,6 +112,7 @@ Automated tests use mock hosts and object storage, including a concurrency test 
 - [App KV](https://staging.anna.partners/developers/reference/host-api-storage.md)
 - [App Files](https://staging.anna.partners/developers/reference/host-api-files.md)
 - [Host Upload](https://staging.anna.partners/developers/tools/executa-host-upload.md)
+- [Invoke size limits](https://staging.anna.partners/developers/apps/app-ui-host-api.md#result-size-and-integrity)
 - [Local development with APS](https://staging.anna.partners/developers/apps/local-dev.md)
 
 MIT License.
