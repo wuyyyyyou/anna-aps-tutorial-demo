@@ -1,0 +1,10 @@
+{
+  "slug": "aps-tutorial-demo",
+  "name": "APS 报告存档",
+  "version": "0.1.0",
+  "tagline": "保存一份报告，刷新后重新找回。",
+  "description": "APS 入门教程的独立示例：App KV 偏好、个人 APS 文件、短期 Host Upload。",
+  "category": "developer-tools",
+  "pricing_model": "free",
+  "bundled_executas": { "report-store": { "path": "executas/report-store" } }
+}

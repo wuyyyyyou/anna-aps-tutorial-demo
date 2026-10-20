@@ -1,0 +1,24 @@
+{
+  "schema": 2,
+  "permissions": ["tools.invoke"],
+  "host_capabilities": ["aps.kv", "aps.files", "host.upload"],
+  "required_executas": [{ "tool_id": "bundled:report-store", "min_version": "0.1.0" }],
+  "optional_executas": [],
+  "system_prompt_addendum": "This tutorial is driven manually from its UI. Never delete reports from an agent session.",
+  "tags": ["demo", "aps", "developer-tools"],
+  "ui": {
+    "bundle": { "format": "static-spa", "entry": "index.html", "external_origins": [] },
+    "views": [{
+      "name": "main", "title": "APS 报告存档", "default": true, "entry": "index.html",
+      "min_size": { "w": 640, "h": 600 }, "default_size": { "w": 1100, "h": 850 },
+      "resizable": true, "movable": true, "single_instance": true
+    }],
+    "host_api": {
+      "tools": ["required:bundled:report-store"],
+      "storage": ["get", "set"]
+    },
+    "csp_overrides": {
+      "script-src": ["'self'"], "style-src": ["'self'"], "connect-src": ["'self'", "https:"]
+    }
+  }
+}

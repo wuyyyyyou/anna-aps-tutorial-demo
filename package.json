@@ -1,0 +1,17 @@
+{
+  "name": "anna-aps-tutorial-demo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A small Anna App for learning APS KV, durable files and temporary Host Upload.",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "predev": "npm run build",
+    "dev": "anna-app dev --storage aps --no-watch",
+    "check": "node --check src/app.js && node --check src/workflows.js && node --check executas/report-store/plugin.js && node --check executas/report-store/storage.js && node --check executas/report-store/rpc.js",
+    "test": "node --test test/*.test.mjs",
+    "validate": "anna-app validate --strict"
+  },
+  "devDependencies": { "@anna-ai/cli": "0.1.59" }
+}

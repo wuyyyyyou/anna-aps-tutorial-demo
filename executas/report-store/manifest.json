@@ -1,0 +1,29 @@
+{
+  "display_name": "APS Tutorial Report Store",
+  "version": "0.1.0",
+  "description": "Small reports under aps-tutorial/reports/; explicit user scope.",
+  "author": "Anna Developer",
+  "host_capabilities": ["aps.files", "host.upload"],
+  "tools": [
+    { "name": "save_report", "description": "Save a new Markdown report to personal APS.", "parameters": [
+      { "name": "title", "type": "string", "required": true, "description": "Report title, at most 120 characters." },
+      { "name": "body", "type": "string", "required": true, "description": "Report text, at most 12 KiB UTF-8." }
+    ] },
+    { "name": "list_reports", "description": "Read one page of tutorial reports in user scope.", "parameters": [
+      { "name": "cursor", "type": "string", "required": false, "description": "Opaque next_cursor from the preceding page." }
+    ] },
+    { "name": "get_report_url", "description": "Mint a fresh short-lived URL for a tutorial report.", "parameters": [
+      { "name": "path", "type": "string", "required": true, "description": "Exact APS path from list_reports." }
+    ] },
+    { "name": "delete_report", "description": "Delete one previewed tutorial report after exact path confirmation.", "parameters": [
+      { "name": "path", "type": "string", "required": true, "description": "Exact APS path from list_reports." },
+      { "name": "etag", "type": "string", "required": true, "description": "ETag from list_reports." },
+      { "name": "confirmation", "type": "string", "required": true, "description": "Must equal path exactly." }
+    ] },
+    { "name": "temporary_report", "description": "Upload a temporary copy using host/uploadFile; no APS file is created.", "parameters": [
+      { "name": "title", "type": "string", "required": true, "description": "Report title." },
+      { "name": "body", "type": "string", "required": true, "description": "Report text, at most 12 KiB UTF-8." },
+      { "name": "mode", "type": "string", "required": true, "description": "inline or negotiate." }
+    ] }
+  ]
+}

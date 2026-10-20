@@ -1,0 +1,17 @@
+{
+  "slug": "report-store",
+  "name": "APS Tutorial Report Store",
+  "version": "0.1.0",
+  "description": "Stores tutorial reports in the current user's APS.",
+  "executa_type": "tool",
+  "tool_id": "tool-local-aps-tutorial-report-store",
+  "type": "node",
+  "command": ["node", "plugin.js"],
+  "enabled": true,
+  "distribution": {
+    "active": "local",
+    "profiles": { "local": { "type": "local", "supports_protocol": true,
+      "capabilities": ["save_report", "list_reports", "get_report_url", "delete_report", "temporary_report"]
+    } }
+  }
+}

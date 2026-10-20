@@ -1,0 +1,8 @@
+node_modules/
+bundle/
+.anna/
+.anna-tool-ids.cache.js
+.env
+.env.*
+*.log
+.DS_Store
