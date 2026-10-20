@@ -30,6 +30,8 @@ npm run dev -- --port 5184 --llm-account https://staging.anna.partners
 
 `npm run dev` 会先构建，再运行 `anna-app dev --storage aps --no-watch`。登录 Host、运行参数和浏览器里查看存储的 Host 必须一致。切换登录账号后，重启 demo。
 
+修改源码后，先停止服务，再重新执行 `npm run dev`，让 bundle 和 CLI 的临时工具映射一起重建；本示例不启用自动重建。
+
 **保留 `--storage aps`。** 默认 legacy 后端主要用于离线开发，不能用来验证真实 APS 持久化。此 CLI 的真实 APS 模式依赖真实登录桥接，不能搭配 `--no-llm` 或 `--mock-llm`；这不代表本 demo 会调用模型。不要关闭 strict capability gate。
 
 ## 跟着做
